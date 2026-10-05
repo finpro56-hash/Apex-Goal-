@@ -1,0 +1,117 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default-deny global safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // User session and profile metadata
+    match /users/{userId} {
+      allow get: if isSignedIn() && isValidId(userId) && request.auth.uid == userId;
+      allow list: if false;
+      allow create, update: if isSignedIn() && isValidId(userId) &&
+        request.auth.uid == userId &&
+        incoming().uid == request.auth.uid &&
+        incoming().email is string &&
+        incoming().email.size() <= 256;
+      allow delete: if false;
+    }
+
+    // High-level overarching goals
+    match /goals/{goalId} {
+      allow get: if isSignedIn() && isValidId(goalId) && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(goalId) &&
+        incoming().userId == request.auth.uid &&
+        incoming().id == goalId &&
+        incoming().title is string &&
+        incoming().title.size() > 0 &&
+        incoming().title.size() <= 200 &&
+        incoming().completed is bool;
+      allow update: if isSignedIn() && isValidId(goalId) &&
+        existing().userId == request.auth.uid &&
+        incoming().userId == request.auth.uid &&
+        incoming().id == existing().id &&
+        incoming().title is string &&
+        incoming().title.size() > 0 &&
+        incoming().title.size() <= 200 &&
+        incoming().completed is bool;
+      allow delete: if isSignedIn() && isValidId(goalId) && existing().userId == request.auth.uid;
+    }
+
+    // Milestones partitioned by goal
+    match /milestones/{milestoneId} {
+      allow get: if isSignedIn() && isValidId(milestoneId) && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(milestoneId) &&
+        incoming().userId == request.auth.uid &&
+        incoming().id == milestoneId &&
+        incoming().title is string &&
+        incoming().title.size() > 0 &&
+        incoming().title.size() <= 200 &&
+        incoming().completed is bool &&
+        incoming().order is number &&
+        exists(/databases/$(database)/documents/goals/$(incoming().goalId)) &&
+        get(/databases/$(database)/documents/goals/$(incoming().goalId)).data.userId == request.auth.uid;
+      allow update: if isSignedIn() && isValidId(milestoneId) &&
+        existing().userId == request.auth.uid &&
+        incoming().userId == request.auth.uid &&
+        incoming().id == existing().id &&
+        incoming().goalId == existing().goalId &&
+        incoming().title is string &&
+        incoming().title.size() > 0 &&
+        incoming().title.size() <= 200 &&
+        incoming().completed is bool &&
+        incoming().order is number;
+      allow delete: if isSignedIn() && isValidId(milestoneId) && existing().userId == request.auth.uid;
+    }
+
+    // Atomic sub-tasks
+    match /tasks/{taskId} {
+      allow get: if isSignedIn() && isValidId(taskId) && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(taskId) &&
+        incoming().userId == request.auth.uid &&
+        incoming().id == taskId &&
+        incoming().title is string &&
+        incoming().title.size() > 0 &&
+        incoming().title.size() <= 200 &&
+        incoming().completed is bool &&
+        incoming().order is number &&
+        exists(/databases/$(database)/documents/goals/$(incoming().goalId)) &&
+        get(/databases/$(database)/documents/goals/$(incoming().goalId)).data.userId == request.auth.uid &&
+        exists(/databases/$(database)/documents/milestones/$(incoming().milestoneId)) &&
+        get(/databases/$(database)/documents/milestones/$(incoming().milestoneId)).data.userId == request.auth.uid;
+      allow update: if isSignedIn() && isValidId(taskId) &&
+        existing().userId == request.auth.uid &&
+        incoming().userId == request.auth.uid &&
+        incoming().id == existing().id &&
+        incoming().goalId == existing().goalId &&
+        incoming().milestoneId == existing().milestoneId &&
+        incoming().title is string &&
+        incoming().title.size() > 0 &&
+        incoming().title.size() <= 200 &&
+        incoming().completed is bool &&
+        incoming().order is number;
+      allow delete: if isSignedIn() && isValidId(taskId) && existing().userId == request.auth.uid;
+    }
+  }
+}

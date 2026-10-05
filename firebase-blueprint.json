@@ -1,0 +1,212 @@
+{
+  "entities": {
+    "UserSession": {
+      "title": "UserSession",
+      "description": "User profile and session validation metadata",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "User unique identifier matching auth UID"
+        },
+        "email": {
+          "type": "string",
+          "maxLength": 256,
+          "description": "User email address"
+        },
+        "displayName": {
+          "type": "string",
+          "maxLength": 120,
+          "description": "Display name of the user"
+        },
+        "photoURL": {
+          "type": "string",
+          "maxLength": 500,
+          "description": "Avatar photo URL"
+        },
+        "sessionExpiresAt": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "ISO timestamp for 24h session expiry"
+        },
+        "createdAt": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "ISO timestamp of user creation"
+        },
+        "updatedAt": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "ISO timestamp of last activity update"
+        }
+      },
+      "required": ["uid", "email"]
+    },
+    "Goal": {
+      "title": "Goal",
+      "description": "High-level overarching ambition broken into milestones",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Unique goal ID"
+        },
+        "userId": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "UID of the goal owner"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "description": "Big goal headline"
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 1000,
+          "description": "Detailed motivation or context"
+        },
+        "category": {
+          "type": "string",
+          "maxLength": 50,
+          "description": "Category or domain tag"
+        },
+        "targetDate": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Target completion date"
+        },
+        "completed": {
+          "type": "boolean",
+          "description": "Whether the big goal is achieved"
+        },
+        "createdAt": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Creation timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Last update timestamp"
+        }
+      },
+      "required": ["id", "userId", "title", "completed"]
+    },
+    "Milestone": {
+      "title": "Milestone",
+      "description": "Intermediate phase or major checkpoint of a goal",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Unique milestone ID"
+        },
+        "goalId": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Parent goal ID"
+        },
+        "userId": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "UID of owner"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "description": "Milestone title"
+        },
+        "order": {
+          "type": "number",
+          "description": "Sequence sorting index"
+        },
+        "completed": {
+          "type": "boolean",
+          "description": "Whether all tasks in milestone are done"
+        },
+        "createdAt": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Creation timestamp"
+        }
+      },
+      "required": ["id", "goalId", "userId", "title", "completed", "order"]
+    },
+    "Task": {
+      "title": "Task",
+      "description": "Atomic actionable piece belonging to a milestone",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Unique task ID"
+        },
+        "milestoneId": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Parent milestone ID"
+        },
+        "goalId": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Parent goal ID"
+        },
+        "userId": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "UID of owner"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "description": "Actionable task title"
+        },
+        "completed": {
+          "type": "boolean",
+          "description": "Completion state"
+        },
+        "completedAt": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Timestamp when checked off"
+        },
+        "order": {
+          "type": "number",
+          "description": "Sequence sorting index"
+        },
+        "createdAt": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Creation timestamp"
+        }
+      },
+      "required": ["id", "milestoneId", "goalId", "userId", "title", "completed", "order"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserSession",
+      "description": "Stores user profile and session verification timestamp"
+    },
+    "/goals/{goalId}": {
+      "schema": "Goal",
+      "description": "Top-level ambitious goals owned by users"
+    },
+    "/milestones/{milestoneId}": {
+      "schema": "Milestone",
+      "description": "Milestones belonging to specific goals"
+    },
+    "/tasks/{taskId}": {
+      "schema": "Task",
+      "description": "Granular actionable tasks belonging to milestones"
+    }
+  }
+}

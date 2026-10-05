@@ -1,0 +1,8 @@
+{
+  "name": "Apex Goal - Break Goals into Pieces",
+  "description": "Minimalist mobile-first goal breakdown PWA with multi-level milestones, actionable tasks, progress rings, and 24-hour secure Google session synchronization.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
