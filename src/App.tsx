@@ -186,6 +186,11 @@ function MainApp() {
     }
   };
 
+  const handleUpdateGoalDate = async (goalId: string, targetDate: string) => {
+    if (!user) return;
+    await goalService.updateGoal(goalId, user.uid, { targetDate });
+  };
+
   // Loading Screen
   if (authLoading) {
     return (
@@ -226,6 +231,7 @@ function MainApp() {
             onToggleGoalAchieved={handleToggleGoalAchieved}
             onDeleteGoal={handleDeleteGoal}
             onBack={() => setActiveGoalId(null)}
+            onUpdateGoalDate={handleUpdateGoalDate}
           />
         ) : activeTab === 'focus' ? (
           <FocusTodayView

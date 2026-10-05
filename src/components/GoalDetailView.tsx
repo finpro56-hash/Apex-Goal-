@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { GoalWithBreakdown, Milestone, TaskItem } from '@/types';
 import { ProgressRing } from './ProgressRing';
+import { DatePickerInput } from './DatePickerInput';
 import confetti from 'canvas-confetti';
 import { 
   Check, 
@@ -11,9 +12,10 @@ import {
   Calendar, 
   Tag, 
   CheckCircle2, 
-  Circle,
-  Flag,
-  Sparkles
+  Circle, 
+  Flag, 
+  Sparkles,
+  X
 } from 'lucide-react';
 
 interface GoalDetailViewProps {
@@ -26,6 +28,7 @@ interface GoalDetailViewProps {
   onToggleGoalAchieved: (goal: GoalWithBreakdown) => Promise<void>;
   onDeleteGoal: (goalId: string) => Promise<void>;
   onBack: () => void;
+  onUpdateGoalDate?: (goalId: string, targetDate: string) => Promise<void>;
 }
 
 export const GoalDetailView: React.FC<GoalDetailViewProps> = ({
@@ -38,12 +41,15 @@ export const GoalDetailView: React.FC<GoalDetailViewProps> = ({
   onToggleGoalAchieved,
   onDeleteGoal,
   onBack,
+  onUpdateGoalDate,
 }) => {
   const [newMilestoneTitle, setNewMilestoneTitle] = useState('');
   const [isAddingMilestone, setIsAddingMilestone] = useState(false);
   const [taskInputs, setTaskInputs] = useState<{ [milestoneId: string]: string }>({});
   const [expandedMilestones, setExpandedMilestones] = useState<{ [milestoneId: string]: boolean }>({});
   const [isDeletingGoal, setIsDeletingGoal] = useState(false);
+  const [isEditingTargetDate, setIsEditingTargetDate] = useState(false);
+  const [draftTargetDate, setDraftTargetDate] = useState<string>('');
 
   // Toggle milestone collapse state (defaults to closed/false when goal is opened)
   const toggleMilestoneExpanded = (mId: string) => {
@@ -148,15 +154,20 @@ export const GoalDetailView: React.FC<GoalDetailViewProps> = ({
               <span className="tabular-nums">
                 {goal.completedTasksCount} of {goal.totalTasksCount} pieces done
               </span>
-              {goal.targetDate && (
-                <>
-                  <span aria-hidden="true" className="text-zinc-700">·</span>
-                  <span className="flex items-center gap-1 text-zinc-400">
-                    <Calendar className="w-3.5 h-3.5 text-zinc-500" />
-                    Target {goal.targetDate}
-                  </span>
-                </>
-              )}
+              <span aria-hidden="true" className="text-zinc-700">·</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setDraftTargetDate(goal.targetDate || '');
+                  setIsEditingTargetDate(true);
+                }}
+                className="group inline-flex items-center gap-1.5 text-zinc-300 hover:text-emerald-300 transition-colors py-1 px-2.5 rounded-lg bg-zinc-900/80 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 cursor-pointer min-h-[30px]"
+                title="Click to change target date with visual calendar"
+                aria-label="Edit target date"
+              >
+                <Calendar className="w-3.5 h-3.5 text-emerald-400 group-hover:text-emerald-300 transition-colors shrink-0" />
+                <span className="font-medium">{goal.targetDate ? `Target ${goal.targetDate}` : 'Set target date'}</span>
+              </button>
             </div>
           </div>
 
@@ -454,6 +465,69 @@ export const GoalDetailView: React.FC<GoalDetailViewProps> = ({
                 className="min-h-[44px] px-4 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold"
               >
                 Delete Goal
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Target Date Edit Modal Dialog */}
+      {isEditingTargetDate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-150">
+          <div className="w-full max-w-sm bg-zinc-950 border border-zinc-800 rounded-3xl p-5 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between pb-2 border-b border-zinc-900">
+              <div>
+                <h3 className="text-sm font-bold text-white tracking-tight">
+                  Goal Target Date
+                </h3>
+                <p className="text-[11px] text-zinc-500">Pick a completion date for this ambition</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsEditingTargetDate(false)}
+                className="p-1.5 min-h-[36px] min-w-[36px] flex items-center justify-center text-zinc-500 hover:text-white rounded-full transition-colors"
+                aria-label="Close date picker dialog"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <DatePickerInput
+              value={draftTargetDate}
+              onChange={(newDate) => {
+                setDraftTargetDate(newDate);
+              }}
+              label="Select Target Date"
+              placeholder="Tap to open visual calendar..."
+              showQuickPresets={true}
+            />
+
+            <div className="flex items-center justify-between pt-2 border-t border-zinc-900 text-xs">
+              {draftTargetDate ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDraftTargetDate('');
+                  }}
+                  className="text-rose-400 hover:text-rose-300 transition-colors py-1 font-medium min-h-[36px] flex items-center"
+                >
+                  Clear Date
+                </button>
+              ) : (
+                <div />
+              )}
+
+              <button
+                type="button"
+                onClick={async () => {
+                  if (onUpdateGoalDate) {
+                    await onUpdateGoalDate(goal.id, draftTargetDate);
+                  }
+                  setIsEditingTargetDate(false);
+                }}
+                className="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs shadow-md shadow-emerald-500/20 transition-all active:scale-95"
+              >
+                Done
               </button>
             </div>
           </div>

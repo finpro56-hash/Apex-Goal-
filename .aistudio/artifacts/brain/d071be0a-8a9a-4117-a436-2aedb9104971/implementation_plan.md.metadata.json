@@ -1,6 +1,6 @@
 {
-  "summary":  "Implementation plan to remove the redundant Session tab from BottomTabBar.tsx, refining the bottom navigation into a clean two-tab layout (Goals and Focus) centered around the quick-add goal floating action button.",
-  "updatedAt":  "2026-10-05T18:17:20.518301609Z",
+  "summary":  "Implementation plan to buffer target date changes locally in the Goal Detail popup until the user explicitly clicks the Done button, preventing premature modal dismissal on date selection or preset clicks.",
+  "updatedAt":  "2026-10-05T20:13:03.435971097Z",
   "requestFeedback":  true,
   "userFacing":  true
 }

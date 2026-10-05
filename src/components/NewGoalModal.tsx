@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Sparkles, Calendar, Layers } from 'lucide-react';
+import { DatePickerInput } from './DatePickerInput';
 
 interface NewGoalModalProps {
   isOpen: boolean;
@@ -251,18 +252,14 @@ export const NewGoalModal: React.FC<NewGoalModalProps> = ({
             </div>
           </div>
 
-          {/* Target Date */}
-          <div>
-            <label className="block text-xs font-medium text-zinc-300 mb-1.5">
-              Target Target Date (Optional)
-            </label>
-            <input
-              type="date"
-              value={targetDate}
-              onChange={(e) => setTargetDate(e.target.value)}
-              className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
-            />
-          </div>
+          {/* Target Date with Native Calendar Popover Trigger */}
+          <DatePickerInput
+            value={targetDate}
+            onChange={setTargetDate}
+            label="Target Date (Optional)"
+            placeholder="Select target date from calendar..."
+            showQuickPresets={true}
+          />
 
           {/* Action Buttons */}
           <div className="pt-2 flex items-center justify-end gap-2">
