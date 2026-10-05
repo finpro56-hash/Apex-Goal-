@@ -1,7 +1,7 @@
 import React from 'react';
-import { Target, CheckCircle2, Shield, Plus } from 'lucide-react';
+import { Target, CheckCircle2, Plus } from 'lucide-react';
 
-export type TabKey = 'goals' | 'focus' | 'profile';
+export type TabKey = 'goals' | 'focus';
 
 interface BottomTabBarProps {
   activeTab: TabKey;
@@ -22,7 +22,7 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({
       role="navigation"
       aria-label="Main application navigation"
     >
-      <div className="max-w-md mx-auto px-4 h-16 flex items-center justify-between relative">
+      <div className="max-w-md mx-auto px-6 h-16 flex items-center justify-around relative">
         {/* Tab 1: Goals */}
         <button
           onClick={() => onTabChange('goals')}
@@ -36,7 +36,7 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({
         </button>
 
         {/* Center Floating Action Button: Add Goal */}
-        <div className="flex items-center justify-center px-2">
+        <div className="flex items-center justify-center px-4">
           <button
             onClick={onOpenNewGoal}
             className="w-12 h-12 -mt-5 rounded-full bg-emerald-500 hover:bg-emerald-400 text-black flex items-center justify-center shadow-[0_4px_20px_rgba(16,185,129,0.35)] active:scale-95 transition-all"
@@ -63,18 +63,6 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({
             )}
           </div>
           <span className="text-[11px] font-medium tracking-tight mt-1">Focus</span>
-        </button>
-
-        {/* Tab 3: Security & Session */}
-        <button
-          onClick={() => onTabChange('profile')}
-          className={`flex-1 flex flex-col items-center justify-center min-h-[48px] py-1 transition-colors ${
-            activeTab === 'profile' ? 'text-emerald-400' : 'text-zinc-500 hover:text-zinc-300'
-          }`}
-          aria-label="Profile and 24h Session Status"
-        >
-          <Shield className="w-5 h-5" />
-          <span className="text-[11px] font-medium tracking-tight mt-1">Session</span>
         </button>
       </div>
     </nav>

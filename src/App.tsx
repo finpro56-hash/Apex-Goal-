@@ -236,16 +236,6 @@ function MainApp() {
               setActiveTab('goals');
             }}
           />
-        ) : activeTab === 'profile' ? (
-          <div className="px-4 py-4 pb-28">
-            <ProfileModal
-              isOpen={true}
-              onClose={() => setActiveTab('goals')}
-              totalGoalsCount={rawGoals.length}
-              totalTasksCount={rawTasks.length}
-              completedTasksCount={rawTasks.filter((t) => t.completed).length}
-            />
-          </div>
         ) : (
           /* Goals Overview Tab */
           <div className="px-4 py-4 pb-28 space-y-5">
@@ -354,7 +344,7 @@ function MainApp() {
       </main>
 
       {/* Floating Bottom Ergonomic Navigation Bar */}
-      {!activeGoal && activeTab !== 'profile' && (
+      {!activeGoal && (
         <BottomTabBar
           activeTab={activeTab}
           onTabChange={(tab) => setActiveTab(tab)}

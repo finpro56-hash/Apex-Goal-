@@ -1,104 +1,65 @@
-# Security Hardening: Database-Enforced 24h Expiry & Cache Isolation
+# Navigation Streamlining: Remove Redundant Session Tab
 
-A comprehensive security hardening update for the Apex Goal PWA that moves 24-hour session validation from bypassable client logic directly into Firestore Security Rules, purges local IndexedDB persistence on logout/expiry, and eliminates static PII from application blueprints.
+Streamline the mobile bottom navigation bar by removing the redundant "Session" tab item, keeping session management and logout consolidated exclusively within the top bar user profile drawer.
 
 ### User Review & Critical Decisions
 
 > [!IMPORTANT]
-> Based on your security analysis and confirmed preferences:
-> 1. **Rule-Level Session Enforcement**: Every Firestore read and write will be gated by `request.auth.token.auth_time * 1000 > request.time.toMillis() - 86400000`. Stale or tampered tokens will be rejected by the Firestore engine itself.
-> 2. **Client Token Eviction & Cache Purge**: On 24-hour expiration or user logout, the application will terminate the Firestore instance and execute `clearIndexedDbPersistence(db)` alongside local storage purging to prevent physical device inspection attacks.
-> 3. **PII Sanitization**: Remove all static personal email mentions from blueprints, test specs, and configuration documentation.
+> - **Consolidated Session Access**: Session status, countdown timers, token refresh, and logout options remain accessible at all times by tapping the user profile avatar in the top navigation bar.
+> - **Refined Bottom Bar**: `BottomTabBar.tsx` will be streamlined to a 2-tab ergonomic layout:
+>   - **Goals Tab**: Overview of active and achieved goals.
+>   - **Center Floating Action Button (+)**: Rapid goal creation modal trigger.
+>   - **Focus Tab**: Next actionable items across all goals with real-time pending task badge.
 
 ---
 
 ### 1. Overview & Core Concept
 
-- **What It Does**: Upgrades the security posture of the Goal Breakdown PWA from advisory client-side checks to cryptographic, database-enforced zero-trust access control.
-- **Target Audience / Persona**: Security-conscious individuals tracking sensitive personal and professional goals who require absolute confidentiality even on shared or physical mobile devices.
-- **Key Value**: Guarantees that goals cannot be read or modified beyond the 24-hour window through DevTools, direct SDK exploitation, or physical extraction of browser IndexedDB caches.
+- **What It Does**: Eliminates navigational duplication between the top bar user profile avatar and the bottom tab bar, delivering a cleaner, more focused mobile touch interface.
+- **Key Value**: Simplifies thumb-zone navigation, focusing the user's attention on their core loop: creating goals and executing focus tasks.
 
 ---
 
 ### 2. User Experience & Visual Design
 
-- **Key User Flows**:
-  1. **Active Session Flow**: Seamless goal management with live progress rings and real-time synchronization while the 24-hour window is valid.
-  2. **Expiration & Cache Purge**: When the 24-hour countdown reaches zero, the app alerts the user, securely terminates Firestore, purges IndexedDB persistence to leave zero local remnants, signs out of Firebase, and displays the clean re-authentication screen.
-  3. **Seamless Re-Authentication**: User taps "Sign in with Google Mail", generating a new `auth_time` timestamp on Google's identity servers, unlocking database operations for another 24 hours.
-
-- **Visual Feedback & Diagnostics**:
-  - *Session Center Indicator*: Displays exact remaining TTL (`Xh Ym`) in the top navigation and profile drawer.
-  - *Expiry Notification*: Non-intrusive alert informing the user that offline caches have been safely wiped in accordance with the 24-hour privacy policy.
+- **Bottom Navigation Layout**:
+  - Balanced 3-element composition: `[ Goals ]` — `[ (+) Floating Add Button ]` — `[ Focus (Badge) ]`.
+  - Wider touch targets ($\ge 48\times 48\text{px}$) for thumb navigation.
+- **Session & Account Access**:
+  - The top bar continues to show the real-time session duration counter (`23h 48m`) and Google user avatar.
+  - Tapping the avatar smoothly opens the full Session & Account drawer with token validation and logout.
 
 ---
 
 ### 3. Key Product Decisions & Trade-Offs
 
-- **Database-Level `auth_time` vs. Backend Express Server**:
-  - *Chosen Approach*: Enforcing `request.auth.token.auth_time` in `firestore.rules` combined with client token eviction.
-  - *Why*: Eliminates the latency, attack surface, and deployment complexity of maintaining a separate token-revocation server while providing mathematical guarantees at the Firestore database boundary.
-  - *Trade-Off*: Once 24 hours have elapsed since the user's Google sign-in prompt, any token refresh will retain the original `auth_time` until a fresh interactive sign-in occurs, naturally enforcing the strict 24-hour re-login policy.
-
-- **Aggressive IndexedDB Purge vs. Retained Offline Cache**:
-  - *Chosen Approach*: Explicitly terminate and run `clearIndexedDbPersistence(db)` on logout or session expiration.
-  - *Why*: Prevents forensic recovery of private goal documents from device disk or browser storage after session eviction.
+- **Two-Tab + Center FAB Architecture**:
+  - *Chosen Approach*: Update `TabKey` type to `'goals' | 'focus'` in `BottomTabBar.tsx` and `App.tsx`.
+  - *Why*: Provides visual symmetry and direct access to the two primary operational views of the application without clutter.
 
 ---
 
-### 4. Technical Architecture & Data Strategy *(Technical Reference)*
+### 4. Technical Architecture & Component Changes *(Technical Reference)*
 
-#### Architecture & Security Boundary Diagram
+#### Bottom Bar Visual Anatomy
 
 ```
 ┌────────────────────────────────────────────────────────┐
-│                   Client Browser / PWA                 │
+│                   Streamlined Bottom Nav               │
 │                                                        │
-│  ┌───────────────────────┐   ┌──────────────────────┐  │
-│  │  24-Hour TTL Monitor  │   │  IndexedDB Cache     │  │
-│  │  (Prompts Re-Auth)    │   │  [PURGED ON EXPIRY]  │  │
-│  └──────────┬────────────┘   └──────────────────────┘  │
-│             │                                          │
-│             │ Sends Firebase ID Token                  │
-│             │ (contains signed auth_time)              │
-│             ▼                                          │
-│  ┌──────────────────────────────────────────────────┐  │
-│  │  Firestore SDK (getDocs, setDoc, onSnapshot)     │  │
-│  └──────────────────────────┬───────────────────────┘  │
-└─────────────────────────────┼──────────────────────────┘
-                              │
-                              ▼
-┌────────────────────────────────────────────────────────┐
-│              Cloud Firestore Engine                    │
+│       ┌──────────────┐     ┌─────┐     ┌─────────────┐ │
+│       │  🎯 Goals    │     │  +  │     │  ⚡ Focus   │ │
+│       └──────────────┘     └─────┘     └─────────────┘ │
 │                                                        │
-│  ┌──────────────────────────────────────────────────┐  │
-│  │            Hardened Security Rules               │  │
-│  │                                                  │  │
-│  │  function isSessionActive() {                    │  │
-│  │    return request.auth != null &&                │  │
-│  │      request.auth.token.auth_time is int &&      │  │
-│  │      request.auth.token.auth_time * 1000 >       │  │
-│  │        (request.time.toMillis() - 86400000);     │  │
-│  │  }                                               │  │
-│  │                                                  │  │
-│  │  match /{document=**}                            │  │
-│  │    allow read, write: if isSessionActive() &&    │  │
-│  │                          resource.userId == ...  │  │
-│  └──────────────────────────────────────────────────┘  │
+│  (Session & Logout consolidated in TopNav Profile)     │
 └────────────────────────────────────────────────────────┘
 ```
 
-#### Planned File Updates
-
-1. **`firestore.rules`**:
-   - Define global helper `function isSessionActive()` validating `request.auth.token.auth_time * 1000 > (request.time.toMillis() - 86400000)`.
-   - Inject `isSessionActive()` into all `read`, `write`, `create`, `update`, and `delete` gates across `/users`, `/goals`, `/milestones`, and `/tasks`.
-   - Deploy rules via `fax.DeployRules` RPC.
-
-2. **`src/firebase/config.ts` & `src/context/AuthContext.tsx`**:
-   - Implement `purgeLocalCacheAndSignOut()` helper that cleanly terminates the Firestore client and executes `clearIndexedDbPersistence(db)` to wipe all cached goals and tasks.
-   - On 24-hour expiration or manual logout, execute the complete purge routine before clearing storage tokens.
-   - Force interactive `signInWithPopup(auth, googleProvider)` with prompt to ensure a fresh Google `auth_time` claim is minted.
-
-3. **`firebase-blueprint.json` & `security_spec.md`**:
-   - Scrub any static user email strings, replacing them with generic RFC-compliant placeholders.
+#### Files to Modify:
+1. **`src/components/BottomTabBar.tsx`**:
+   - Update `TabKey` to `'goals' | 'focus'`.
+   - Remove `Shield` icon import and the "Session" button block.
+   - Adjust flex distribution so Goals, FAB, and Focus are evenly spaced.
+2. **`src/App.tsx`**:
+   - Update `activeTab` state type to `'goals' | 'focus'`.
+   - Remove unused `activeTab === 'profile'` conditional block.

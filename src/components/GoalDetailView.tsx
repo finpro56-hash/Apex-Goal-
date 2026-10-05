@@ -45,11 +45,11 @@ export const GoalDetailView: React.FC<GoalDetailViewProps> = ({
   const [expandedMilestones, setExpandedMilestones] = useState<{ [milestoneId: string]: boolean }>({});
   const [isDeletingGoal, setIsDeletingGoal] = useState(false);
 
-  // Toggle milestone collapse state (defaults to true if undefined)
+  // Toggle milestone collapse state (defaults to closed/false when goal is opened)
   const toggleMilestoneExpanded = (mId: string) => {
     setExpandedMilestones((prev) => ({
       ...prev,
-      [mId]: prev[mId] !== undefined ? !prev[mId] : false,
+      [mId]: !prev[mId],
     }));
   };
 
@@ -265,7 +265,7 @@ export const GoalDetailView: React.FC<GoalDetailViewProps> = ({
 
         {/* Milestones List */}
         {goal.milestones.map((milestone, mIdx) => {
-          const isExpanded = expandedMilestones[milestone.id] !== false;
+          const isExpanded = Boolean(expandedMilestones[milestone.id]);
           const completedCount = milestone.tasks.filter((t) => t.completed).length;
           const totalCount = milestone.tasks.length;
           const milestoneProgress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
@@ -321,8 +321,12 @@ export const GoalDetailView: React.FC<GoalDetailViewProps> = ({
                   </button>
 
                   <button
-                    onClick={() => toggleMilestoneExpanded(milestone.id)}
-                    className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-zinc-400 hover:text-white"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleMilestoneExpanded(milestone.id);
+                    }}
+                    className="p-2 min-h-[44px] min-w-[44px] rounded-xl bg-zinc-900/80 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-white flex items-center justify-center transition-colors"
+                    title={isExpanded ? 'Collapse sub-tasks' : 'Expand sub-tasks'}
                     aria-label={isExpanded ? 'Collapse milestone' : 'Expand milestone'}
                   >
                     {isExpanded ? (
