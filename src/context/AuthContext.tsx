@@ -6,9 +6,8 @@ import {
   onAuthStateChanged,
   getIdToken
 } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { auth, db, googleProvider } from '@/firebase/config';
-import { handleFirestoreError, OperationType } from '@/firebase/errors';
+import { doc, setDoc } from 'firebase/firestore';
+import { auth, db, googleProvider, purgeFirestorePersistence } from '@/firebase/config';
 import { UserSession } from '@/types';
 
 interface AuthContextType {
@@ -58,10 +57,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (parsed.sessionExpiresAt > now) {
           userSession = parsed;
         } else {
-          // 24 hour session window expired!
-          console.warn('Session expired after 24-hour limit.');
+          // 24 hour session window expired - wipe cache and force logout
+          console.warn('Session expired after 24-hour limit. Purging local persistence.');
           setIsSessionExpired(true);
           localStorage.removeItem(storageKey);
+          await purgeFirestorePersistence();
           await signOut(auth);
           setUser(null);
           setSession(null);
@@ -134,15 +134,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setTimeRemainingMs(remaining);
 
       if (remaining <= 0) {
-        console.warn('24-hour session expired. Logging out.');
+        console.warn('24-hour session expired. Purging cache and logging out.');
         setIsSessionExpired(true);
         const storageKey = `${LOCAL_STORAGE_KEY_PREFIX}${user.uid}`;
         localStorage.removeItem(storageKey);
+        await purgeFirestorePersistence();
         await signOut(auth);
         setUser(null);
         setSession(null);
       } else {
-        // Securely refresh Firebase ID token in background to keep API calls authorized
+        // Background check token validity
         try {
           await getIdToken(user, false);
         } catch (e) {
@@ -159,7 +160,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setLoading(true);
       const result = await signInWithPopup(auth, googleProvider);
-      // Validate fresh token
+      // Validate fresh token with updated auth_time
       await getIdToken(result.user, true);
       setIsSessionExpired(false);
       await syncSession(result.user);
@@ -176,6 +177,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (user) {
         localStorage.removeItem(`${LOCAL_STORAGE_KEY_PREFIX}${user.uid}`);
       }
+      // Purge cached Firestore IndexedDB documents
+      await purgeFirestorePersistence();
       await signOut(auth);
       setUser(null);
       setSession(null);

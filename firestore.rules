@@ -7,8 +7,12 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
-    function isSignedIn() {
-      return request.auth != null;
+    // Cryptographic database-enforced 24-hour session validation
+    // Uses Google Auth token auth_time (seconds since epoch) compared against request.time
+    function isSessionActive() {
+      return request.auth != null &&
+        request.auth.token.auth_time is int &&
+        (request.auth.token.auth_time * 1000) > (request.time.toMillis() - 86400000);
     }
 
     function isValidId(id) {
@@ -25,9 +29,9 @@ service cloud.firestore {
 
     // User session and profile metadata
     match /users/{userId} {
-      allow get: if isSignedIn() && isValidId(userId) && request.auth.uid == userId;
+      allow get: if isSessionActive() && isValidId(userId) && request.auth.uid == userId;
       allow list: if false;
-      allow create, update: if isSignedIn() && isValidId(userId) &&
+      allow create, update: if isSessionActive() && isValidId(userId) &&
         request.auth.uid == userId &&
         incoming().uid == request.auth.uid &&
         incoming().email is string &&
@@ -37,16 +41,16 @@ service cloud.firestore {
 
     // High-level overarching goals
     match /goals/{goalId} {
-      allow get: if isSignedIn() && isValidId(goalId) && existing().userId == request.auth.uid;
-      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow create: if isSignedIn() && isValidId(goalId) &&
+      allow get: if isSessionActive() && isValidId(goalId) && existing().userId == request.auth.uid;
+      allow list: if isSessionActive() && resource.data.userId == request.auth.uid;
+      allow create: if isSessionActive() && isValidId(goalId) &&
         incoming().userId == request.auth.uid &&
         incoming().id == goalId &&
         incoming().title is string &&
         incoming().title.size() > 0 &&
         incoming().title.size() <= 200 &&
         incoming().completed is bool;
-      allow update: if isSignedIn() && isValidId(goalId) &&
+      allow update: if isSessionActive() && isValidId(goalId) &&
         existing().userId == request.auth.uid &&
         incoming().userId == request.auth.uid &&
         incoming().id == existing().id &&
@@ -54,14 +58,14 @@ service cloud.firestore {
         incoming().title.size() > 0 &&
         incoming().title.size() <= 200 &&
         incoming().completed is bool;
-      allow delete: if isSignedIn() && isValidId(goalId) && existing().userId == request.auth.uid;
+      allow delete: if isSessionActive() && isValidId(goalId) && existing().userId == request.auth.uid;
     }
 
     // Milestones partitioned by goal
     match /milestones/{milestoneId} {
-      allow get: if isSignedIn() && isValidId(milestoneId) && existing().userId == request.auth.uid;
-      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow create: if isSignedIn() && isValidId(milestoneId) &&
+      allow get: if isSessionActive() && isValidId(milestoneId) && existing().userId == request.auth.uid;
+      allow list: if isSessionActive() && resource.data.userId == request.auth.uid;
+      allow create: if isSessionActive() && isValidId(milestoneId) &&
         incoming().userId == request.auth.uid &&
         incoming().id == milestoneId &&
         incoming().title is string &&
@@ -71,7 +75,7 @@ service cloud.firestore {
         incoming().order is number &&
         exists(/databases/$(database)/documents/goals/$(incoming().goalId)) &&
         get(/databases/$(database)/documents/goals/$(incoming().goalId)).data.userId == request.auth.uid;
-      allow update: if isSignedIn() && isValidId(milestoneId) &&
+      allow update: if isSessionActive() && isValidId(milestoneId) &&
         existing().userId == request.auth.uid &&
         incoming().userId == request.auth.uid &&
         incoming().id == existing().id &&
@@ -81,14 +85,14 @@ service cloud.firestore {
         incoming().title.size() <= 200 &&
         incoming().completed is bool &&
         incoming().order is number;
-      allow delete: if isSignedIn() && isValidId(milestoneId) && existing().userId == request.auth.uid;
+      allow delete: if isSessionActive() && isValidId(milestoneId) && existing().userId == request.auth.uid;
     }
 
     // Atomic sub-tasks
     match /tasks/{taskId} {
-      allow get: if isSignedIn() && isValidId(taskId) && existing().userId == request.auth.uid;
-      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow create: if isSignedIn() && isValidId(taskId) &&
+      allow get: if isSessionActive() && isValidId(taskId) && existing().userId == request.auth.uid;
+      allow list: if isSessionActive() && resource.data.userId == request.auth.uid;
+      allow create: if isSessionActive() && isValidId(taskId) &&
         incoming().userId == request.auth.uid &&
         incoming().id == taskId &&
         incoming().title is string &&
@@ -100,7 +104,7 @@ service cloud.firestore {
         get(/databases/$(database)/documents/goals/$(incoming().goalId)).data.userId == request.auth.uid &&
         exists(/databases/$(database)/documents/milestones/$(incoming().milestoneId)) &&
         get(/databases/$(database)/documents/milestones/$(incoming().milestoneId)).data.userId == request.auth.uid;
-      allow update: if isSignedIn() && isValidId(taskId) &&
+      allow update: if isSessionActive() && isValidId(taskId) &&
         existing().userId == request.auth.uid &&
         incoming().userId == request.auth.uid &&
         incoming().id == existing().id &&
@@ -111,7 +115,7 @@ service cloud.firestore {
         incoming().title.size() <= 200 &&
         incoming().completed is bool &&
         incoming().order is number;
-      allow delete: if isSignedIn() && isValidId(taskId) && existing().userId == request.auth.uid;
+      allow delete: if isSessionActive() && isValidId(taskId) && existing().userId == request.auth.uid;
     }
   }
 }

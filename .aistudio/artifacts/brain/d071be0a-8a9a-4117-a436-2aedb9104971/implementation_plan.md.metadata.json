@@ -1,6 +1,6 @@
 {
-  "summary":  "Implementation plan for the Goal Breakdown installable PWA with Firebase Auth (Google Sign-In, 24-hr session expiry), Firestore persistence, multi-level tree goal hierarchy, progress rings, and OLED dark mobile-first ergonomics.",
-  "updatedAt":  "2026-10-05T17:35:01.508169534Z",
+  "summary":  "Implementation plan for hardening the Goal Breakdown PWA security architecture: database-level 24-hour auth_time enforcement in Firestore security rules, client token eviction, IndexedDB persistence purging on session expiration/logout, and removal of hardcoded PII from blueprints.",
+  "updatedAt":  "2026-10-05T18:06:08.059172231Z",
   "requestFeedback":  true,
   "userFacing":  true
 }
