@@ -1,6 +1,6 @@
 {
-  "summary":  "Implementation plan to buffer target date changes locally in the Goal Detail popup until the user explicitly clicks the Done button, preventing premature modal dismissal on date selection or preset clicks.",
-  "updatedAt":  "2026-10-05T20:13:03.435971097Z",
+  "summary":  "Revised implementation plan strictly scoped to updating the milestone heading in src/components/GoalDetailView.tsx to display full text with clean multi-line wrapping and horizontal box containment, without changing anything else in the app.",
+  "updatedAt":  "2026-10-06T01:24:09.963247202Z",
   "requestFeedback":  true,
   "userFacing":  true
 }

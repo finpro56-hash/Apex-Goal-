@@ -285,16 +285,16 @@ export const GoalDetailView: React.FC<GoalDetailViewProps> = ({
           return (
             <div
               key={milestone.id}
-              className="bg-zinc-950/80 border border-zinc-900 rounded-2xl overflow-hidden transition-all duration-200"
+              className="w-full bg-zinc-950/80 border border-zinc-900 rounded-2xl overflow-hidden transition-all duration-200"
             >
               {/* Milestone Accordion Header */}
-              <div className="p-4 flex items-center justify-between gap-3 bg-zinc-900/40">
+              <div className="p-4 flex items-start justify-between gap-3 bg-zinc-900/40 w-full min-w-0">
                 <button
                   onClick={() => toggleMilestoneExpanded(milestone.id)}
-                  className="flex-1 flex items-center gap-3 text-left min-h-[44px]"
+                  className="flex-1 flex items-start gap-3 text-left min-h-[44px] min-w-0 py-0.5"
                 >
                   <div
-                    className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+                    className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 ${
                       isMilestoneDone
                         ? 'bg-emerald-500 text-black'
                         : 'bg-zinc-800 text-zinc-400 border border-zinc-700'
@@ -303,15 +303,15 @@ export const GoalDetailView: React.FC<GoalDetailViewProps> = ({
                     {isMilestoneDone ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : mIdx + 1}
                   </div>
 
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 max-w-full">
                     <h3
-                      className={`text-sm font-semibold truncate ${
+                      className={`text-sm font-semibold whitespace-normal break-words [overflow-wrap:anywhere] leading-snug ${
                         isMilestoneDone ? 'line-through text-zinc-500' : 'text-zinc-100'
                       }`}
                     >
                       {milestone.title}
                     </h3>
-                    <div className="flex items-center gap-2 text-[11px] text-zinc-500 mt-0.5 font-mono tabular-nums">
+                    <div className="flex items-center flex-wrap gap-2 text-[11px] text-zinc-500 mt-1 font-mono tabular-nums">
                       <span>{completedCount} / {totalCount} completed</span>
                       <span>·</span>
                       <span className={isMilestoneDone ? 'text-emerald-400' : 'text-zinc-400'}>
